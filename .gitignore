@@ -1,0 +1,10 @@
+# kernel source - reproducible via upstream + fork frost-1256/nothing-spacewar-resukisu
+kernel/
+**/out/
+*.img
+*.zip
+Image
+Image-*
+*.bak
+AnyKernel3/Image
+# keep: *.sh, *.md, *.config, patches/, tools/, susfs-backups (patches, 67M/62M tarballs ok), verification logs, AnyKernel3 scripts

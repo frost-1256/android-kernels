@@ -1,0 +1,96 @@
+[    0.000000][    T0] Booting Linux on physical CPU 0x0000000000 [0x411fd070]
+[    0.000000][    T0] Linux version 5.4.274-qgki-g4670d6bdb795 (nothing@NTSV-J900XHX2) (Android (6877366 based on r383902b1) clang version 11.0.2 (https://android.googlesource.com/toolchain/llvm-project b397f81060ce6d701042b782172ed13bee898b79), LLD 11.0.2 (https://android.googlesource.com/toolchain/llvm-project b397f81060ce6d701042b782172ed13bee898b79)) #1 SMP PREEMPT Fri Sep 26 17:09:45 CST 2025
+[    0.000000][    T0] memblock_reserve: 0xfffff setup_arch+0x64/0x1ec
+[    0.000000][    T0] random: crng init done
+[    0.000000][    T0] Machine model: linux,dummy-virt
+[    0.000000][    T0] earlycon: pl11 at MMIO 0x0000000009000000 (options '')
+[    0.000000][    T0] printk: bootconsole [pl11] enabled
+[    0.000000][    T0] efi: Getting EFI parameters from FDT:
+[    0.000000][    T0] efi: UEFI not found.
+[    0.000000][    T0] cma: Reserved 16 MiB at 0x00000000bf000000
+[    0.000000][    T0] psci: probing for conduit method from DT.
+[    0.000000][    T0] psci: PSCIv1.1 detected in firmware.
+[    0.000000][    T0] psci: Using standard PSCI v0.2 function IDs
+[    0.000000][    T0] psci: Trusted OS migration not required
+[    0.000000][    T0] psci: SMC Calling Convention v1.0
+[    0.000000][    T0] percpu: Embedded 32 pages/cpu s92248 r8192 d30632 u131072
+[    0.000000][    T0] Detected PIPT I-cache on CPU0
+[    0.000000][    T0] CPU features: detected: ARM erratum 832075
+[    0.000000][    T0] CPU features: detected: EL2 vector hardening
+[    0.000000][    T0] CPU features: kernel page table isolation forced ON by KASLR
+[    0.000000][    T0] CPU features: detected: Kernel page table isolation (KPTI)
+[    0.000000][    T0] ARM_SMCCC_ARCH_WORKAROUND_1 missing from firmware
+[    0.000000][    T0] CPU features: detected: Spectre-BHB
+[    0.000000][    T0] CPU features: detected: ARM erratum 1742098
+[    0.000000][    T0] Built 1 zonelists, mobility grouping on.  Total pages: 516096
+[    0.000000][    T0] Kernel command line: cgroup_disable=pressure console=ttyAMA0 earlycon=pl011,0x9000000 loglevel=7
+[    0.000000][    T0] cgroup: Disabling pressure control group feature
+[    0.000000][    T0] Dentry cache hash table entries: 262144 (order: 9, 2097152 bytes, linear)
+[    0.000000][    T0] Inode-cache hash table entries: 131072 (order: 8, 1048576 bytes, linear)
+[    0.000000][    T0] mem auto-init: stack:all(zero), heap alloc:on, heap free:off
+[    0.000000][    T0] Memory: 1994616K/2097152K available (21180K kernel code, 2946K rwdata, 13440K rodata, 4480K init, 2404K bss, 86152K reserved, 16384K cma-reserved)
+[    0.000000][    T0] SLUB: HWalign=64, Order=0-3, MinObjects=0, CPUs=4, Nodes=1
+[    0.000000][    T0] rcu: Preemptible hierarchical RCU implementation.
+[    0.000000][    T0] rcu: 	RCU dyntick-idle grace-period acceleration is enabled.
+[    0.000000][    T0] rcu: 	RCU restricting CPUs from NR_CPUS=32 to nr_cpu_ids=4.
+[    0.000000][    T0] 	Tasks RCU enabled.
+[    0.000000][    T0] rcu: RCU calculated value of scheduler-enlistment delay is 25 jiffies.
+[    0.000000][    T0] rcu: Adjusting geometry for rcu_fanout_leaf=16, nr_cpu_ids=4
+[    0.000000][    T0] NR_IRQS: 64, nr_irqs: 64, preallocated irqs: 0
+[    0.000000][    T0] GICv2m: range[mem 0x08020000-0x08020fff], SPI[80:143]
+[    0.000000][    T0] rcu: 	Offload RCU callbacks from CPUs: (none).
+[    0.000000][    T0] arch_timer: cp15 timer(s) running at 62.50MHz (virt).
+[    0.000000][    T0] clocksource: arch_sys_counter: mask: 0xffffffffffffff max_cycles: 0x1cd42e208c, max_idle_ns: 881590405314 ns
+[    0.000057][    T0] sched_clock: 56 bits at 62MHz, resolution 16ns, wraps every 4398046511096ns
+[    0.000578][    T0] clocksource: Switched to clocksource arch_sys_counter
+[    0.007147][    T0] Calibrating delay loop (skipped), value calculated using timer frequency.. 125.00 BogoMIPS (lpj=250000)
+[    0.007445][    T0] pid_max: default: 32768 minimum: 301
+[    0.008248][    T0] LSM: Security Framework initializing
+[    0.009191][    T0] SELinux:  Initializing.
+[    0.009840][    T0] Mount-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.009996][    T0] Mountpoint-cache hash table entries: 4096 (order: 3, 32768 bytes, linear)
+[    0.031598][    T1] /cpus/cpu-map: empty cluster
+[    0.037975][    T1] ASID allocator initialised with 32768 entries
+[    0.038844][    T1] rcu: Hierarchical SRCU implementation.
+[    0.041605][    T1] dynamic_debug:dynamic_debug_init: Ignore empty _ddebug table in a CONFIG_DYNAMIC_DEBUG_CORE build
+[    0.042727][    T1] ------------[ cut here ]------------
+[    0.042821][    T1] kernel BUG at arch/arm64/kernel/traps.c:405!
+[    0.043092][    T1] Internal error: Oops - BUG: 0 [#1] PREEMPT SMP
+[    0.043320][    T1] Modules linked in:
+[    0.043542][    T1] CPU: 0 PID: 1 Comm: swapper/0 Not tainted 5.4.274-qgki-g4670d6bdb795 #1
+[    0.043672][    T1] Hardware name: linux,dummy-virt (DT)
+[    0.043838][    T1] pstate: 00400085 (nzcv daIf +PAN -UAO)
+[    0.043947][    T1] pc : do_undefinstr+0x54/0x58
+[    0.044030][    T1] lr : do_undefinstr+0x24/0x58
+[    0.044102][    T1] sp : ffffffc01003b800
+[    0.044168][    T1] x29: ffffffc01003b800 x28: ffffffae7c108fc0 
+[    0.044274][    T1] x27: 0000000000000000 x26: 0000000000000000 
+[    0.044360][    T1] x25: 0000000000000001 x24: 0000000000000000 
+[    0.044467][    T1] x23: 0000000080400085 x22: ffffffd92d686b48 
+[    0.044563][    T1] x21: 0000000042279000 x20: 0000007fffffffff 
+[    0.044654][    T1] x19: ffffffc01003b820 x18: ffffffc010033050 
+[    0.044746][    T1] x17: 0000000000000031 x16: ffffffd92eadbed0 
+[    0.044838][    T1] x15: ffffffd92f6f2117 x14: 0000000000000081 
+[    0.044936][    T1] x13: 0000000000000001 x12: 0000000000000600 
+[    0.045051][    T1] x11: 0000000000000000 x10: 0000000000000001 
+[    0.045184][    T1] x9 : adb555b8aa29db00 x8 : 0000000000000085 
+[    0.045284][    T1] x7 : 0000000000000000 x6 : ffffffc01003b7c8 
+[    0.045376][    T1] x5 : ffffffc01003b7c8 x4 : 0000000000000000 
+[    0.045466][    T1] x3 : 00000000d4000003 x2 : 0000000000000004 
+[    0.045557][    T1] x1 : 0000000000000080 x0 : 0000000000000001 
+[    0.045727][    T1] Call trace:
+[    0.045864][    T1]  do_undefinstr+0x54/0x58
+[    0.045940][    T1]  el1_undef+0x10/0xb4
+[    0.046018][    T1]  __arm_smccc_smc+0x0/0x2c
+[    0.046108][    T1]  qcom_scm_call_smccc+0xd8/0x4a0
+[    0.046202][    T1]  __query_convention.llvm.13709806525173901984+0x98/0x120
+[    0.046317][    T1]  scm_mem_protection_init_do+0x134/0x13c
+[    0.046415][    T1]  scm_mem_protection_init+0x28/0x34
+[    0.046497][    T1]  do_one_initcall+0x1b0/0x364
+[    0.046570][    T1]  do_pre_smp_initcalls+0x110/0x138
+[    0.046647][    T1]  kernel_init_freeable+0xf4/0x19c
+[    0.046727][    T1]  kernel_init+0x18/0x2a0
+[    0.046792][    T1]  ret_from_fork+0x10/0x18
+[    0.047045][    T1] Code: f9400bf3 a8c27bfd f85f8e5e d65f03c0 (d4210000) 
+[    0.047310][    T1] ---[ end trace e75cc1991318ce97 ]---
+[    0.047519][    T1] Kernel panic - not syncing: Fatal exception
