@@ -1,0 +1,114 @@
+name: Build Pixel 8a (akita) SukiSU Ultra + SUSFS
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: "ACK common kernel branch/tag (GKI 6.1)"
+        required: true
+        default: "android14-6.1-2026-09"
+      sukisu_ref:
+        description: "SukiSU-Ultra ref (SUSFS requires builtin)"
+        required: true
+        default: "builtin"
+      sukisu_commit:
+        description: "Optional SukiSU commit SHA (empty = branch tip)"
+        required: false
+        default: ""
+      susfs_ref:
+        description: "susfs4ksu branch/tag"
+        required: true
+        default: "gki-android14-6.1"
+      susfs_commit:
+        description: "Optional SUSFS commit SHA (empty = branch tip)"
+        required: false
+        default: ""
+      kpm:
+        description: "Enable KPM (may affect stability)"
+        type: boolean
+        required: true
+        default: false
+      make_release:
+        description: "Publish a GitHub Release with the artifacts"
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: akita-sukisu-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /opt/az /usr/local/share/boost \
+            /usr/local/lib/node_modules
+          sudo apt-get clean
+          df -h
+
+      - name: Add swap
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          free -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ccache cpio curl dwarves flex git \
+            kmod libelf-dev libncurses-dev libssl-dev lz4 patch python3 \
+            rsync unzip xz-utils zip zstd
+          clang --version || true
+          pahole --version || true
+
+      - name: Build kernel
+        env:
+          KERNEL_REF: ${{ inputs.kernel_ref }}
+          SUKISU_REF: ${{ inputs.sukisu_ref }}
+          SUKISU_COMMIT: ${{ inputs.sukisu_commit }}
+          SUSFS_REF: ${{ inputs.susfs_ref }}
+          SUSFS_COMMIT: ${{ inputs.susfs_commit }}
+          KPM: ${{ inputs.kpm }}
+        run: |
+          bash akita_sukisu/build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: akita-sukisu-susfs-${{ github.run_number }}
+          path: akita_sukisu/artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish release
+        if: ${{ inputs.make_release }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="akita-sukisu-${GITHUB_RUN_NUMBER}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --target "$GITHUB_SHA" \
+              --title "Pixel 8a SukiSU Ultra + SUSFS (${GITHUB_RUN_NUMBER})" \
+              --notes "Kernel: ${{ inputs.kernel_ref }}
+          SukiSU: ${{ inputs.sukisu_ref }} ${{ inputs.sukisu_commit }}
+          SUSFS: ${{ inputs.susfs_ref }} ${{ inputs.susfs_commit }}
+          KPM: ${{ inputs.kpm }}
+
+          Flash at your own risk. Unlocked bootloader required."
+          fi
+          gh release upload "$tag" akita_sukisu/artifacts/* --clobber

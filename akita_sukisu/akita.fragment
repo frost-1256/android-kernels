@@ -1,0 +1,27 @@
+# Pixel 8a (akita) / GKI android14-6.1 / SukiSU Ultra + SUSFS
+# Appended to arch/arm64/configs/gki_defconfig before `make gki_defconfig`.
+
+# SukiSU Ultra (builtin/manual-hook branch)
+CONFIG_KSU=y
+
+# SUSFS (susfs4ksu v2.3.x)
+CONFIG_KSU_SUSFS=y
+CONFIG_KSU_SUSFS_SUS_PATH=y
+CONFIG_KSU_SUSFS_SUS_MOUNT=y
+CONFIG_KSU_SUSFS_SUS_KSTAT=y
+CONFIG_KSU_SUSFS_SPOOF_UNAME=y
+CONFIG_KSU_SUSFS_ENABLE_LOG=y
+CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
+CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
+CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
+CONFIG_KSU_SUSFS_SUS_MAP=y
+
+# Required by KernelSU/SUSFS modules and mount metamodules
+CONFIG_TMPFS_XATTR=y
+CONFIG_TMPFS_POSIX_ACL=y
+
+# Match GKI/Android release build: ThinLTO (needed by CONFIG_CFI_CLANG)
+CONFIG_LTO_CLANG_THIN=y
+
+# Set to y by the workflow when the KPM input is enabled.
+# CONFIG_KPM is not set
