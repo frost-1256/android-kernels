@@ -121,6 +121,9 @@ if [[ "$KPM" == "true" ]]; then
 fi
 cat "$WORK/akita.fragment" >> "$KERNEL_DIR/arch/arm64/configs/gki_defconfig"
 
+# Avoid a "-dirty" suffix in uname (the tree always has local changes here).
+sed -i "s/printf '%s' -dirty/printf '%s' ''/g" "$KERNEL_DIR/scripts/setlocalversion"
+
 log "Build GKI Image"
 export ARCH=arm64 SUBARCH=arm64 LLVM=1 LLVM_IAS=1
 export CC=clang LD=ld.lld AR=llvm-ar NM=llvm-nm OBJCOPY=llvm-objcopy \
@@ -192,20 +195,37 @@ python3 "$MKBOOT_DIR/mkbootimg.py" \
 # a footer; unlocked Pixel bootloaders accept unsigned kernel images either way.
 log "Create boot-avb.img (best effort)"
 cp "$ART/${BASE}-boot.img" "$ART/${BASE}-boot-avb.img"
-if curl -fsSL 'https://android.googlesource.com/platform/external/avb/+/refs/heads/main/avbtool?format=TEXT' \
-     | base64 -d > "$WORK/avbtool" \
-   && curl -fsSL 'https://android.googlesource.com/platform/external/avb/+/refs/heads/main/test/data/testkey_rsa2048.pem?format=TEXT' \
-     | base64 -d > "$WORK/testkey_rsa2048.pem" \
-   && python3 "$WORK/avbtool" add_hash_footer \
+AVB_OK=0
+for avb_url in \
+  'https://android.googlesource.com/platform/external/avb/+/refs/heads/main/avbtool?format=TEXT' \
+  'https://android.googlesource.com/platform/external/avb/+/refs/heads/master/avbtool.py?format=TEXT'
+do
+  if curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 "$avb_url" \
+       | base64 -d > "$WORK/avbtool.py" 2>/dev/null; then
+    AVB_OK=1
+    break
+  fi
+done
+if [[ "$AVB_OK" == "1" ]]; then
+  if ! curl -fsSL --retry 5 --retry-all-errors --retry-delay 3 \
+       'https://android.googlesource.com/platform/external/avb/+/refs/heads/master/test/data/testkey_rsa2048.pem?format=TEXT' \
+       | base64 -d > "$WORK/testkey_rsa2048.pem" 2>/dev/null; then
+    openssl genrsa -out "$WORK/testkey_rsa2048.pem" 2048
+  fi
+  if python3 "$WORK/avbtool.py" add_hash_footer \
         --partition_name boot \
         --partition_size "$BOOT_PARTITION_SIZE" \
         --image "$ART/${BASE}-boot-avb.img" \
         --algorithm SHA256_RSA2048 \
         --key "$WORK/testkey_rsa2048.pem" \
         --rollback_index 0
-then
-  python3 "$WORK/avbtool" info_image --image "$ART/${BASE}-boot-avb.img" | sed -n '1,20p'
-else
+  then
+    python3 "$WORK/avbtool.py" info_image --image "$ART/${BASE}-boot-avb.img" | sed -n '1,20p'
+  else
+    AVB_OK=0
+  fi
+fi
+if [[ "$AVB_OK" != "1" ]]; then
   warn "AVB footer failed; dropping ${BASE}-boot-avb.img"
   rm -f "$ART/${BASE}-boot-avb.img"
 fi

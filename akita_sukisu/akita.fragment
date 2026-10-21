@@ -23,5 +23,8 @@ CONFIG_TMPFS_POSIX_ACL=y
 # Match GKI/Android release build: ThinLTO (needed by CONFIG_CFI_CLANG)
 CONFIG_LTO_CLANG_THIN=y
 
+# Keep a stock-like uname prefix (SUSFS can spoof it on top of this)
+CONFIG_LOCALVERSION="-android14-11"
+
 # Set to y by the workflow when the KPM input is enabled.
 # CONFIG_KPM is not set

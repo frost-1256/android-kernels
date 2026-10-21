@@ -12,17 +12,17 @@ on:
         required: true
         default: "builtin"
       sukisu_commit:
-        description: "Optional SukiSU commit SHA (empty = branch tip)"
+        description: "SukiSU commit SHA (empty = branch tip)"
         required: false
-        default: ""
+        default: "ce75122bec7423e0f1fa06e3e9a174085c5231ab"
       susfs_ref:
         description: "susfs4ksu branch/tag"
         required: true
         default: "gki-android14-6.1"
       susfs_commit:
-        description: "Optional SUSFS commit SHA (empty = branch tip)"
+        description: "SUSFS commit SHA (empty = branch tip)"
         required: false
-        default: ""
+        default: "b57ed1998b82c4e3a2a81cdbf11172a560979c40"
       kpm:
         description: "Enable KPM (may affect stability)"
         type: boolean
