@@ -1,0 +1,118 @@
+# Android 17 userspace <-> Linux mainline contract for spacewar.
+#
+# This fragment is merged on top of arm64 defconfig.  Everything Android's
+# init/zygote/netd/vold/SurfaceFlinger needs from the kernel is =y here:
+# the boot image contains no vendor_dlkm modules that could fill the gaps.
+#
+# It deliberately does NOT try to reproduce the 5.4 qGKI KMI.  The vendor
+# blobs are replaced with AOSP/mainline-backed HALs, so GKI/vermagic does not
+# matter.
+
+# --- binder / IPC -----------------------------------------------------------
+CONFIG_ANDROID=y
+CONFIG_ANDROID_BINDER_IPC=y
+CONFIG_ANDROID_BINDERFS=y
+CONFIG_ANDROID_BINDER_DEVICES="binder,hwbinder,vndbinder"
+
+# --- graphics buffer plumbing ----------------------------------------------
+CONFIG_DMABUF_HEAPS=y
+CONFIG_DMABUF_HEAPS_SYSTEM=y
+CONFIG_DMABUF_HEAPS_CMA=y
+CONFIG_UDMABUF=y
+CONFIG_SYNC_FILE=y
+CONFIG_DMA_SHARED_BUFFER=y
+
+# --- scheduler / PSI / uclamp (Android 11+ userspace) -----------------------
+CONFIG_PSI=y
+CONFIG_UCLAMP_TASK=y
+CONFIG_UCLAMP_TASK_GROUP=y
+CONFIG_UCLAMP_BUCKETS_COUNT=5
+CONFIG_ENERGY_MODEL=y
+CONFIG_CPU_FREQ_GOV_SCHEDUTIL=y
+
+# --- security ---------------------------------------------------------------
+CONFIG_SECURITY=y
+CONFIG_SECURITY_NETWORK=y
+CONFIG_SECURITY_SELINUX=y
+CONFIG_SECURITY_SELINUX_BOOTPARAM=y
+CONFIG_SECURITY_SELINUX_DEVELOP=y
+CONFIG_LSM="landlock,lockdown,yama,integrity,selinux,bpf"
+CONFIG_SECCOMP=y
+CONFIG_SECCOMP_FILTER=y
+
+# netd: eBPF programs are the primary packet path since Android 10
+CONFIG_BPF_SYSCALL=y
+CONFIG_BPF_JIT=y
+CONFIG_BPF_JIT_ALWAYS_ON=y
+CONFIG_CGROUP_BPF=y
+CONFIG_NET_CLS_BPF=y
+CONFIG_NET_SCH_INGRESS=y
+CONFIG_NET_ACT_BPF=y
+CONFIG_USER_NS=y
+
+# --- cgroups (unified hierarchy) -------------------------------------------
+CONFIG_CGROUPS=y
+CONFIG_CGROUP_SCHED=y
+CONFIG_CGROUP_FREEZER=y
+CONFIG_CGROUP_PIDS=y
+CONFIG_CGROUP_CPUACCT=y
+CONFIG_MEMCG=y
+CONFIG_CPUSETS=y
+
+# --- filesystems / storage --------------------------------------------------
+CONFIG_MEMFD_CREATE=y
+CONFIG_TMPFS_XATTR=y
+CONFIG_TMPFS_POSIX_ACL=y
+CONFIG_EXT4_FS=y
+CONFIG_F2FS_FS=y
+CONFIG_F2FS_FS_XATTR=y
+CONFIG_EROFS_FS=y
+CONFIG_OVERLAY_FS=y
+CONFIG_ZRAM=y
+CONFIG_ZSMALLOC=y
+
+# FBE / metadata encryption.  ufs-qcom exposes the Qualcomm ICE block in
+# mainline, but keep a non-encrypted fstab as the first-boot fallback.
+CONFIG_FS_ENCRYPTION=y
+CONFIG_FS_ENCRYPTION_INLINE_CRYPT=y
+CONFIG_BLK_INLINE_ENCRYPTION=y
+CONFIG_SCSI_UFS_CRYPTO=y
+CONFIG_DM_CRYPT=y
+
+# dynamic partitions (super), dm-verity for system/vendor
+CONFIG_BLK_DEV_DM=y
+CONFIG_DM_VERITY=y
+
+# --- Android USB gadget (adb/fastboot userspace) ----------------------------
+CONFIG_USB_GADGET=y
+CONFIG_USB_CONFIGFS=y
+CONFIG_USB_F_FS=y
+CONFIG_USB_CONFIGFS_F_FS=y
+
+# --- misc -------------------------------------------------------------------
+# Android's ueventd loads firmware from /vendor/firmware, /vendor/firmware_mnt,
+# /vendor/bt_firmware and /vendor/dsp through the user helper.
+CONFIG_FW_LOADER=y
+CONFIG_FW_LOADER_USER_HELPER=y
+# No loadable modules are built; skip keyring/cert generation (and its host
+# OpenSSL dependency).
+# CONFIG_SYSTEM_TRUSTED_KEYRING is not set
+CONFIG_PSTORE=y
+CONFIG_PSTORE_RAM=y
+CONFIG_BOOT_CONFIG=y
+CONFIG_DEVTMPFS=y
+CONFIG_KALLSYMS=y
+CONFIG_MODULES=y
+CONFIG_PANIC_TIMEOUT=5
+CONFIG_DEBUG_INFO_NONE=y
+
+# GKI parity: 4K pages, 39-bit VA (Adreno/display do not need more)
+CONFIG_ARM64_4K_PAGES=y
+CONFIG_ARM64_VA_BITS_39=y
+CONFIG_ARM64_PA_BITS_48=y
+
+# display/GPU CMA pool
+CONFIG_CMA=y
+CONFIG_DMA_CMA=y
+CONFIG_CMA_SIZE_SEL_MBYTES=y
+CONFIG_CMA_SIZE_MBYTES=64

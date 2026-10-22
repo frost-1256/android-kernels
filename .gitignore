@@ -8,3 +8,12 @@ Image-*
 *.bak
 AnyKernel3/Image
 # keep: *.sh, *.md, *.config, patches/, tools/, susfs-backups (patches, 67M/62M tarballs ok), verification logs, AnyKernel3 scripts
+spacewar_mainline/linux-*/
+spacewar_mainline/downloads/
+spacewar_mainline/build/
+spacewar_mainline/artifacts/
+spacewar_mainline/tools/mkbootimg/
+spacewar_mainline/linux-*.tar.xz
+lineage24_spacewar/
+__pycache__/
+*.pyc

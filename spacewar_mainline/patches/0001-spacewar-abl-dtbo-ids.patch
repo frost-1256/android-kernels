@@ -1,0 +1,17 @@
+--- a/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
++++ b/arch/arm64/boot/dts/qcom/sm7325-nothing-spacewar.dts
+@@ -28,6 +28,14 @@
+ / {
+ 	model = "Nothing Phone (1)";
+ 	compatible = "nothing,spacewar", "qcom,sm7325";
++	/*
++	 * Android boot header v3 keeps the base tree in vendor_boot.img; ABL
++	 * selects it by matching these IDs (SM7325 "yupik", board 0x1000b),
++	 * then applies the dtbo overlays.  The mainline DTB is installed as
++	 * that base tree, so it has to carry the stock IDs.
++	 */
++	qcom,msm-id = <0x1db 0x10000 0x203 0x10000>;
++	qcom,board-id = <0x1000b 0x00>;
+ 	chassis-type = "handset";
+ 
+ 	aliases {

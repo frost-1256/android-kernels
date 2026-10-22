@@ -1,0 +1,107 @@
+name: Build Nothing Phone (1) mainline kernel (Android)
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_version:
+        description: "Linux mainline version (kernel.org tarball)"
+        required: true
+        default: "7.3"
+      stock_boot_url:
+        description: "URL to a LineageOS 24 spacewar boot.img (optional, needed for a flashable boot.img)"
+        required: false
+        default: ""
+      stock_vendor_boot_url:
+        description: "URL to the matching LineageOS 24 vendor_boot.img (optional, needed for the mainline DTB)"
+        required: false
+        default: ""
+      cmdline:
+        description: "Mainline-specific cmdline for the repacked boot.img"
+        required: false
+        default: "console=ttyMSM0,115200n8 androidboot.selinux=permissive"
+      make_release:
+        description: "Publish a GitHub Release with the artifacts"
+        type: boolean
+        required: true
+        default: false
+  push:
+    paths:
+      - "spacewar_mainline/**"
+      - ".github/workflows/build-spacewar-mainline.yml"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: spacewar-mainline-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /opt/az /usr/local/share/boost \
+            /usr/local/lib/node_modules
+          sudo apt-get clean
+          df -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison clang cpio curl flex git libelf-dev libssl-dev lld patch \
+            llvm lz4 python3 xz-utils zstd
+          clang --version
+          ld.lld --version
+
+      - name: Cache kernel tarball
+        uses: actions/cache@v4
+        with:
+          path: spacewar_mainline/downloads
+          key: linux-${{ inputs.kernel_version || '7.3' }}-v1
+
+      - name: Build kernel
+        env:
+          KERNEL_VERSION: ${{ inputs.kernel_version || '7.3' }}
+          STOCK_BOOT_URL: ${{ inputs.stock_boot_url }}
+          STOCK_VENDOR_BOOT_URL: ${{ inputs.stock_vendor_boot_url }}
+          CMDLINE: ${{ inputs.cmdline }}
+        run: bash spacewar_mainline/build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: spacewar-mainline-${{ inputs.kernel_version || '7.3' }}-${{ github.run_number }}
+          path: spacewar_mainline/artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish release
+        if: ${{ inputs.make_release }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          tag="spacewar-mainline-${GITHUB_RUN_NUMBER}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --target "$GITHUB_SHA" \
+              --title "Nothing Phone (1) mainline ${{ inputs.kernel_version || '7.3' }} (${GITHUB_RUN_NUMBER})" \
+              --notes "Linux ${{ inputs.kernel_version || '7.3' }} + Android 17 kernel contract for spacewar.
+
+          Artifacts: Image, sm7325-nothing-spacewar.dtb, config, System.map, and
+          (when the stock URLs are given) boot.img, vendor_boot.img, dtbo.img.
+
+          Android boot header v3 stores the base DTB in vendor_boot.img; the
+          mainline tree replaces it there. dtbo.img is an empty table because
+          the stock dtbo entries are overlays for the vendor tree.
+          Flash boot, vendor_boot and dtbo to the current slot after disabling AVB.
+          Unlocked bootloader required. Vendor HALs are NOT included."
+          fi
+          gh release upload "$tag" spacewar_mainline/artifacts/* --clobber

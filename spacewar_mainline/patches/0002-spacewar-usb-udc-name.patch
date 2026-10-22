@@ -1,0 +1,17 @@
+--- a/arch/arm64/boot/dts/qcom/kodiak.dtsi
++++ b/arch/arm64/boot/dts/qcom/kodiak.dtsi
+@@ -4925,7 +4925,13 @@
+ 			};
+ 		};
+ 
+-		usb_1: usb@a600000 {
++		/*
++		 * The platform device (and therefore the USB gadget/UDC) name
++		 * is derived from the node name.  Name it dwc3@... so the UDC
++		 * is "a600000.dwc3", which is what the Android vendor USB HAL
++		 * and init.target.rc expect on spacewar.
++		 */
++		usb_1: dwc3@a600000 {
+ 			compatible = "qcom,sc7280-dwc3", "qcom,snps-dwc3";
+ 			reg = <0 0x0a600000 0 0xfc100>;
+ 			status = "disabled";
