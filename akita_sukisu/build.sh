@@ -98,6 +98,31 @@ git -C "$SUSFS_DIR" log -1 --oneline
 
 SUSFS_PATCH="$SUSFS_DIR/kernel_patches/$SUSFS_PATCH_NAME"
 [[ -f "$SUSFS_PATCH" ]] || die "SUSFS patch not found: $SUSFS_PATCH"
+if ! grep -q '#include <trace/hooks/blk.h>' "$KERNEL_DIR/fs/namespace.c"; then
+  log "Adapt SUSFS patch for $KERNEL_REF (no trace/hooks/blk.h)"
+  python3 - "$SUSFS_PATCH" <<'PY'
+import re
+import sys
+
+path = sys.argv[1]
+text = open(path).read()
+needle = ' #include <trace/hooks/blk.h>\n'
+if needle not in text:
+    raise SystemExit("SUSFS patch context not found")
+
+pos = text.index(needle)
+hdr_start = text.rfind("\n@@ ", 0, pos)
+hdr_end = text.index("\n", hdr_start + 1)
+header = text[hdr_start + 1:hdr_end]
+match = re.match(r"@@ -(\d+),(\d+) \+(\d+),(\d+) @@(.*)$", header)
+if not match:
+    raise SystemExit(f"bad hunk header: {header}")
+old_start, old_count, new_start, new_count, tail = match.groups()
+text = text[:hdr_start + 1] + f"@@ -{old_start},{int(old_count) - 1} +{new_start},{int(new_count) - 1} @@{tail}" + text[hdr_end:]
+text = text.replace(needle, "", 1)
+open(path, "w").write(text)
+PY
+fi
 cp -f "$SUSFS_DIR"/kernel_patches/fs/* "$KERNEL_DIR/fs/"
 cp -f "$SUSFS_DIR"/kernel_patches/include/linux/* "$KERNEL_DIR/include/linux/"
 if ! ( cd "$KERNEL_DIR" && patch -p1 --fuzz=3 --no-backup-if-mismatch < "$SUSFS_PATCH" ); then
