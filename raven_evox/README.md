@@ -1,7 +1,7 @@
-# Pixel 6 Pro (raven) Evolution X — SukiSU Ultra + SUSFS kernel
+# Pixel 6 Pro (raven) Evolution X — SukiSU Ultra + SUSFS + NoMount kernel
 
 Google Pixel 6 Pro (raven / Tensor GS101) の **Evolution X** 向けに、
-**GKI 6.1** カーネルへ **SukiSU Ultra** と **SUSFS** を組み込んで
+**GKI 6.1** カーネルへ **SukiSU Ultra** と **SUSFS**、**NoMount** を組み込んで
 GitHub Actions でビルドする構成。`akita_sukisu` の姉妹構成。
 
 ローカルでのカーネルソース・ツールチェーンのダウンロードは不要。
@@ -19,6 +19,7 @@ GitHub Actions でビルドする構成。`akita_sukisu` の姉妹構成。
 | カーネル | ACK `android14-6.1-2025-09`（= 6.1.145、純正と同一 LTS） |
 | root | SukiSU Ultra `builtin` ブランチ |
 | hiding | susfs4ksu `gki-android14-6.1` (v2.3.x) |
+| mount | NoMount `v2.2.0` を **built-in** 統合 (`CONFIG_NOMOUNT=y`) |
 | 出力 | `boot.img` / `boot-avb.img` / AnyKernel3 zip / `Image` / `.config` |
 
 > **注意:** これは GKI (共通カーネル) のみを差し替える構成。
@@ -41,6 +42,7 @@ GitHub の **Actions → Build Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SU
 - `sukisu_commit` / `susfs_commit`: 既定は `akita_sukisu` で実績のある commit
   (`ce75122...` / `b57ed19...`)。空欄にするとブランチ先頭を使う。
 - `susfs_ref`: `gki-android14-6.1`。
+- `nomount_ref`: NoMount のタグ/コミット。既定は `v2.2.0`。
 - `kpm`: 通常は off。
 - `make_release`: on なら `raven-evox-<run_number>` タグで Release に添付する。
 
@@ -54,6 +56,15 @@ GitHub の **Actions → Build Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SU
   (ramdisk は vendor_boot 側なので、AK3 は split_boot + flash_boot で kernel のみ差し替え)
 - `*-Image` … 生カーネル
 - `*-kernel.config`, `build-info.txt`, `SHA256SUMS.txt`
+
+## NoMount の使い方
+
+カーネル側は built-in 済みなので、LKM は不要。
+あとは [NoMount の Releases](https://github.com/maxsteeel/nomount/releases)
+から metamodule の ZIP をダウンロードして SukiSU Manager で焼き、再起動するだけ。
+以降、通常モジュールのマウントは NoMount が VFS レイヤーで差し替える
+(`/proc/mounts` を汚さない方式)。WebUI でモジュールの hot load や
+アプリごとの除外 (UID isolation) ができる。
 
 ## 書き込み
 
@@ -85,6 +96,9 @@ fastboot reboot
 
 - 仕組みは `akita_sukisu/build.sh` と同一 (SukiSU は `kernel/setup.sh`、
   SUSFS は `susfs4ksu` のパッチ適用、`make gki_defconfig && make Image`)。
+- NoMount は公式 `kernel/setup.sh` で統合する (clone を `fs/nomount` へ
+  シンボリックリンクし、`fs/Makefile` / `fs/Kconfig` へ1行ずつ追加)。
+  本体は自己完結型 (fs_initcall + keyring 通信) で、追加のカーネルパッチはなし。
 - 違いは対象まわりだけ: 既定ブランチ (6.1.145)、boot.img の os_version を
   純正に合わせて付けないこと、AK3 の device check が `raven` で
   本リポジトリ同梱の `anykernel.sh` を使うこと。

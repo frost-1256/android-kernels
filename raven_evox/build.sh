@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build a GKI (android14-6.1) kernel for Pixel 6 Pro (raven, Evolution X) with SukiSU Ultra + SUSFS.
+# Build a GKI (android14-6.1) kernel for Pixel 6 Pro (raven, Evolution X) with SukiSU Ultra + SUSFS + NoMount.
 # Intended to run on an Ubuntu GitHub Actions runner; it downloads everything itself.
 set -euo pipefail
 
@@ -18,6 +18,10 @@ SUSFS_REPO="${SUSFS_REPO:-https://github.com/ShirkNeko/susfs4ksu.git}"
 SUSFS_REF="${SUSFS_REF:-gki-android14-6.1}"
 SUSFS_COMMIT="${SUSFS_COMMIT:-}"
 SUSFS_PATCH_NAME="${SUSFS_PATCH_NAME:-50_add_susfs_in_gki-android14-6.1.patch}"
+
+NOMOUNT_REPO="${NOMOUNT_REPO:-https://github.com/maxsteeel/nomount.git}"
+NOMOUNT_REF="${NOMOUNT_REF:-v2.2.0}"
+NOMOUNT_SETUP_URL="${NOMOUNT_SETUP_URL:-https://raw.githubusercontent.com/maxsteeel/nomount/master/kernel/setup.sh}"
 
 KPM="${KPM:-false}"
 CLANG_VERSION="${CLANG_VERSION:-clang-r487747c}"
@@ -41,6 +45,7 @@ cat <<EOF
   kernel ref     : $KERNEL_REF
   SukiSU ref     : $SUKISU_REF ${SUKISU_COMMIT:+($SUKISU_COMMIT)}
   SUSFS repo/ref : $SUSFS_REPO / $SUSFS_REF ${SUSFS_COMMIT:+($SUSFS_COMMIT)}
+  NoMount ref    : $NOMOUNT_REF
   KPM            : $KPM
   clang          : $CLANG_VERSION ($CLANG_ARCHIVE_REF)
 EOF
@@ -137,6 +142,18 @@ fi
 # SUSFS requires this for vendor Wi-Fi modules on 6.1 GKI.
 rm -f "$KERNEL_DIR"/android/abi_gki_protected_exports_*
 
+log "Integrate NoMount ($NOMOUNT_REF)"
+# NoMount's setup.sh clones the repo into $KERNEL_DIR/NoMount, symlinks
+# fs/nomount -> NoMount/kernel/src and hooks fs/Makefile + fs/Kconfig.
+# It is self-contained (fs_initcall, keyring based), no in-kernel patches.
+if [[ ! -L "$KERNEL_DIR/fs/nomount" ]]; then
+  ( cd "$KERNEL_DIR" && curl -fsSL "$NOMOUNT_SETUP_URL" | bash -s "$NOMOUNT_REF" )
+fi
+[[ -L "$KERNEL_DIR/fs/nomount" ]] || die "NoMount setup did not create fs/nomount"
+grep -q 'nomount' "$KERNEL_DIR/fs/Makefile" || die "NoMount setup did not patch fs/Makefile"
+grep -q 'fs/nomount/Kconfig' "$KERNEL_DIR/fs/Kconfig" || die "NoMount setup did not patch fs/Kconfig"
+git -C "$KERNEL_DIR/NoMount" log -1 --oneline
+
 log "Apply kernel config fragment"
 FRAGMENT="$ROOT/raven_evox/raven.fragment"
 [[ -f "$FRAGMENT" ]] || die "fragment not found: $FRAGMENT"
@@ -172,6 +189,7 @@ for opt in \
   CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y \
   CONFIG_KSU_SUSFS_OPEN_REDIRECT=y \
   CONFIG_KSU_SUSFS_SUS_MAP=y \
+  CONFIG_NOMOUNT=y \
   CONFIG_TMPFS_XATTR=y \
   CONFIG_TMPFS_POSIX_ACL=y \
   CONFIG_LTO_CLANG_THIN=y
@@ -277,6 +295,8 @@ cp "$CONFIG_OUT" "$ART/${BASE}-kernel.config"
   echo "susfs_ref=$SUSFS_REF"
   echo "susfs_commit=$(git -C "$SUSFS_DIR" rev-parse HEAD)"
   echo "susfs_version=$(grep -oE 'SUSFS_VERSION \"[^\"]+\"' "$SUSFS_DIR/kernel_patches/include/linux/susfs.h" | head -1 | cut -d'"' -f2)"
+  echo "nomount_ref=$NOMOUNT_REF"
+  echo "nomount_commit=$(git -C "$KERNEL_DIR/NoMount" rev-parse HEAD)"
   echo "kpm=$KPM"
   echo "clang=$(clang --version | head -n 1)"
   echo "built_at=$(date -u +%Y-%m-%dT%H:%M:%SZ)"

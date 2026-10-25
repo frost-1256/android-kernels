@@ -1,4 +1,4 @@
-# Pixel 6 Pro (raven) / Evolution X / GKI android14-6.1 / SukiSU Ultra + SUSFS
+# Pixel 6 Pro (raven) / Evolution X / GKI android14-6.1 / SukiSU Ultra + SUSFS + NoMount
 # Appended to arch/arm64/configs/gki_defconfig before `make gki_defconfig`.
 
 # SukiSU Ultra (builtin/manual-hook branch)
@@ -15,6 +15,9 @@ CONFIG_KSU_SUSFS_HIDE_KSU_SUSFS_SYMBOLS=y
 CONFIG_KSU_SUSFS_SPOOF_CMDLINE_OR_BOOTCONFIG=y
 CONFIG_KSU_SUSFS_OPEN_REDIRECT=y
 CONFIG_KSU_SUSFS_SUS_MAP=y
+
+# NoMount VFS path redirection (built-in; the metamodule ZIP then needs no LKM)
+CONFIG_NOMOUNT=y
 
 # Required by KernelSU/SUSFS modules and mount metamodules
 CONFIG_TMPFS_XATTR=y

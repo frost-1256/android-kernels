@@ -1,4 +1,4 @@
-name: Build Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS
+name: Build Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS + NoMount
 
 on:
   workflow_dispatch:
@@ -23,6 +23,10 @@ on:
         description: "SUSFS commit SHA (empty = branch tip)"
         required: false
         default: "b57ed1998b82c4e3a2a81cdbf11172a560979c40"
+      nomount_ref:
+        description: "NoMount tag/commit to integrate built-in"
+        required: true
+        default: "v2.2.0"
       kpm:
         description: "Enable KPM (may affect stability)"
         type: boolean
@@ -79,6 +83,7 @@ jobs:
           SUKISU_COMMIT: ${{ inputs.sukisu_commit }}
           SUSFS_REF: ${{ inputs.susfs_ref }}
           SUSFS_COMMIT: ${{ inputs.susfs_commit }}
+          NOMOUNT_REF: ${{ inputs.nomount_ref }}
           KPM: ${{ inputs.kpm }}
         run: |
           bash raven_evox/build.sh
@@ -100,10 +105,11 @@ jobs:
           if ! gh release view "$tag" >/dev/null 2>&1; then
             gh release create "$tag" \
               --target "$GITHUB_SHA" \
-              --title "Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS (${GITHUB_RUN_NUMBER})" \
+              --title "Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS + NoMount (${GITHUB_RUN_NUMBER})" \
               --notes "Kernel: ${{ inputs.kernel_ref }}
           SukiSU: ${{ inputs.sukisu_ref }} ${{ inputs.sukisu_commit }}
           SUSFS: ${{ inputs.susfs_ref }} ${{ inputs.susfs_commit }}
+          NOMOUNT_REF: ${{ inputs.nomount_ref }}
           KPM: ${{ inputs.kpm }}
 
           Flash at your own risk. Unlocked bootloader required."
