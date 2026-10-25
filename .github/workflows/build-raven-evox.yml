@@ -1,0 +1,111 @@
+name: Build Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS
+
+on:
+  workflow_dispatch:
+    inputs:
+      kernel_ref:
+        description: "ACK common kernel branch/tag (GKI 6.1)"
+        required: true
+        default: "android14-6.1-2025-09"
+      sukisu_ref:
+        description: "SukiSU-Ultra ref (SUSFS requires builtin)"
+        required: true
+        default: "builtin"
+      sukisu_commit:
+        description: "SukiSU commit SHA (empty = branch tip)"
+        required: false
+        default: "ce75122bec7423e0f1fa06e3e9a174085c5231ab"
+      susfs_ref:
+        description: "susfs4ksu branch/tag"
+        required: true
+        default: "gki-android14-6.1"
+      susfs_commit:
+        description: "SUSFS commit SHA (empty = branch tip)"
+        required: false
+        default: "b57ed1998b82c4e3a2a81cdbf11172a560979c40"
+      kpm:
+        description: "Enable KPM (may affect stability)"
+        type: boolean
+        required: true
+        default: false
+      make_release:
+        description: "Publish a GitHub Release with the artifacts"
+        type: boolean
+        required: true
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: raven-evox-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 360
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+            /opt/hostedtoolcache/CodeQL /opt/az /usr/local/share/boost \
+            /usr/local/lib/node_modules
+          sudo apt-get clean
+          df -h
+
+      - name: Show swap
+        run: |
+          swapon --show || true
+          free -h
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            bc bison build-essential ccache cpio curl dwarves flex git \
+            kmod libelf-dev libncurses-dev libssl-dev lz4 patch python3 \
+            rsync unzip xz-utils zip zstd
+          clang --version || true
+          pahole --version || true
+
+      - name: Build kernel
+        env:
+          KERNEL_REF: ${{ inputs.kernel_ref }}
+          SUKISU_REF: ${{ inputs.sukisu_ref }}
+          SUKISU_COMMIT: ${{ inputs.sukisu_commit }}
+          SUSFS_REF: ${{ inputs.susfs_ref }}
+          SUSFS_COMMIT: ${{ inputs.susfs_commit }}
+          KPM: ${{ inputs.kpm }}
+        run: |
+          bash raven_evox/build.sh
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: raven-evox-sukisu-susfs-${{ github.run_number }}
+          path: raven_evox/artifacts/*
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Publish release
+        if: ${{ inputs.make_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="raven-evox-${GITHUB_RUN_NUMBER}"
+          if ! gh release view "$tag" >/dev/null 2>&1; then
+            gh release create "$tag" \
+              --target "$GITHUB_SHA" \
+              --title "Pixel 6 Pro (raven) Evolution X SukiSU Ultra + SUSFS (${GITHUB_RUN_NUMBER})" \
+              --notes "Kernel: ${{ inputs.kernel_ref }}
+          SukiSU: ${{ inputs.sukisu_ref }} ${{ inputs.sukisu_commit }}
+          SUSFS: ${{ inputs.susfs_ref }} ${{ inputs.susfs_commit }}
+          KPM: ${{ inputs.kpm }}
+
+          Flash at your own risk. Unlocked bootloader required."
+          fi
+          gh release upload "$tag" raven_evox/artifacts/* --clobber
